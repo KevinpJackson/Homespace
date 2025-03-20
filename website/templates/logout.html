@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h3 align="center">Are you sure you want to Log Out?</h3>
+  <form method="POST" action="{{ url_for('auth.login') }}">
+    <button type="submit" class="btn btn-primary">Logout</button>
+  </form>
+<br>
+<a href="{{ url_for('views.home') }}" class="btn btn-primary">Go back to home</a>
+{% endblock %}

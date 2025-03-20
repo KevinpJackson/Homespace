@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Homepage{% endblock %}
+
+{% block content %}
+<h1>Welcome, {{ user.first_name }}!</h1>
+
+<!-- Notes Section -->
+<h1 align="center">Notes:</h1>
+<ul class="list-group list-group-flush" id="notes">
+    {% for note in notes %}
+    <li class="list-group-item" id="note-{{ note.id }}">
+        {{ note.data }}
+        <button type="button" class="close" onClick="deleteNote('{{ note.id }}')">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </li>
+    {% endfor %}
+</ul>
+
+<!-- Add New Note Form -->
+<form method="POST">
+    <input type="hidden" name="form_type" value="note">
+    <textarea name="note" id="note" class="form-control" placeholder="Add your note"></textarea>
+    <br />
+    <div align="center">
+        <button type="submit" class="btn btn-primary">Add Note</button>
+    </div>
+</form>
+
+<!-- Countdown Section -->
+<h1 align="center">Countdowns:</h1>
+<ul class="list-group list-group-flush" id="countdowns">
+    {% for countdown in countdowns %}
+    <li class="list-group-item" id="countdown-{{ countdown.id }}">
+        {{ countdown.name }}<br>
+        <span class="timer" data-deadline="{{ countdown.deadline }}"></span>
+        <button type="button" class="close" onClick="deleteCountdown('{{ countdown.id }}')">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </li>
+    {% endfor %}
+</ul>
+
+<!-- Add Countdown Form -->
+<form method="POST">
+    <input type="hidden" name="form_type" value="countdown">
+    <div class="form-group">
+        <input type="text" name="countdown_name" class="form-control" placeholder="Countdown Name" required>
+    </div>
+    <div class="form-group">
+        <input type="text" name="countdown_deadline" class="form-control" placeholder="Deadline (YYYY-MM-DD HH:MM)" required>
+    </div>
+    <div align="center">
+        <button type="submit" class="btn btn-primary">Add Countdown</button>
+    </div>
+</form>
+
+<!-- To-Do Section -->
+<h1 align="center">To-Dos:</h1>
+<ul class="list-group list-group-flush" id="todo-list">
+    {% for todo in todos %}
+    <li class="list-group-item" id="todo-{{ todo.id }}">
+        <input type="checkbox" {% if todo.completed %}checked{% endif %} onClick="toggleCompletion('{{ todo.id }}')" />
+        {{ todo.task }}
+        <button type="button" class="close" onClick="deleteToDo('{{ todo.id }}')">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </li>
+    {% endfor %}
+</ul>
+
+<!-- Add To-Do Form -->
+<form method="POST">
+    <input type="hidden" name="form_type" value="todo">
+    <input type="text" name="task" class="form-control" placeholder="Add a new task" required>
+    <button type="submit" class="btn btn-primary mt-2">Add To-Do</button>
+</form>
+
+<script>
+    // Countdown timer functionality
+    document.querySelectorAll('.timer').forEach(function(timerElement) {
+        var deadline = new Date(timerElement.getAttribute('data-deadline')).getTime();
+        
+        var countdownInterval = setInterval(function() {
+            var now = new Date().getTime();
+            var distance = deadline - now;
+
+            if (distance <= 0) {
+                clearInterval(countdownInterval);
+                timerElement.innerHTML = "EXPIRED";
+            } else {
+                var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                timerElement.innerHTML = days + "d " + hours + "h " + minutes + "m " + seconds + "s";
+            }
+        }, 1000);
+    });
+
+    // Function to delete a note
+    function deleteNote(noteId) {
+        fetch('/delete-note', {
+            method: 'POST',
+            body: JSON.stringify({ "noteId": noteId }),  // Send the note ID to the server
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                document.getElementById('note-' + noteId).remove();  // Remove the note from the UI
+            } else {
+                alert('Error deleting note!');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting note!');
+        });
+    }
+
+    // Function to delete a countdown
+    function deleteCountdown(countdownId) {
+        fetch('/delete-countdown', {
+            method: 'POST',
+            body: JSON.stringify({ "countdownId": countdownId }),  // Send the countdown ID to the server
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                document.getElementById('countdown-' + countdownId).remove();  // Remove the countdown from the UI
+            } else {
+                alert('Error deleting countdown!');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting countdown!');
+        });
+    }
+
+    // Function to delete a to-do
+    function deleteToDo(todoId) {
+        fetch('/delete-todo', {
+            method: 'POST',
+            body: JSON.stringify({ "todoId": todoId }),  // Send the to-do ID to the server
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                document.getElementById('todo-' + todoId).remove();  // Remove the to-do from the UI
+            } else {
+                alert('Error deleting to-do!');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting to-do!');
+        });
+    }
+
+    // Function to toggle to-do completion
+    function toggleCompletion(todoId) {
+        fetch('/toggle-todo-completion', {
+            method: 'POST',
+            body: JSON.stringify({ "todoId": todoId }),  // Send the to-do ID to the server
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                alert('Error toggling completion!');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error toggling completion!');
+        });
+    }
+</script>
+
+{% endblock %}
